@@ -1,60 +1,90 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+import { ProductCard } from "@/components/ProductCard";
+import { getMoods, getOccasions, getProducts } from "@/lib/queries";
 
-const products = [
-  { name: "Vanilla Haze", price: "₹1,299", slug: "vanilla-haze" },
-  { name: "Rose Reverie", price: "₹1,499", slug: "rose-reverie" },
-  { name: "Eucalyptus Calm", price: "₹1,399", slug: "eucalyptus-calm" },
-  { name: "Midnight Ember", price: "₹1,699", slug: "midnight-ember" },
+export const metadata: Metadata = { title: "Shop candles" };
+
+type SP = { mood?: string; occasion?: string; sort?: string };
+
+const sorts = [
+  { value: "new", label: "Newest" },
+  { value: "best", label: "Best sellers" },
+  { value: "price-asc", label: "Price: low to high" },
+  { value: "price-desc", label: "Price: high to low" },
 ];
 
-export default function ShopPage() {
+function href(sp: SP, patch: Partial<SP>) {
+  const next = { ...sp, ...patch };
+  const qs = new URLSearchParams(Object.entries(next).filter(([, v]) => v) as [string, string][]);
+  return qs.size ? `/shop?${qs}` : "/shop";
+}
+
+const chip = (active: boolean) =>
+  `rounded-full border px-3.5 py-1.5 text-sm transition ${
+    active ? "border-wine-600 bg-wine-600 text-cream-50" : "border-cocoa-900/15 hover:border-wine-600 hover:text-wine-600"
+  }`;
+
+export default async function ShopPage({ searchParams }: { searchParams: SP }) {
+  const [products, moods, occasions] = await Promise.all([
+    getProducts(searchParams),
+    getMoods(),
+    getOccasions(),
+  ]);
+
   return (
-    <main className="container-lume py-16">
-      <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+    <main className="container-lume py-10 md:py-14">
+      <h1 className="text-4xl sm:text-5xl">Find your next favourite scent.</h1>
+
+      <div className="mt-8 space-y-4">
         <div>
-          <p className="text-sm uppercase tracking-[0.2em] text-cocoa-600">Shop</p>
-          <h1 className="mt-2 text-4xl sm:text-5xl">Find your next favorite scent.</h1>
+          <p className="mb-2 text-sm font-medium">Mood</p>
+          <div className="flex flex-wrap gap-2">
+            <Link href={href(searchParams, { mood: undefined })} className={chip(!searchParams.mood)}>All</Link>
+            {moods.map((m) => (
+              <Link key={m.slug} href={href(searchParams, { mood: m.slug })} className={chip(searchParams.mood === m.slug)}>
+                {m.name}
+              </Link>
+            ))}
+          </div>
         </div>
-        <Link href="/" className="text-sm font-medium text-wine-600 hover:text-wine-700">
-          ← Back home
-        </Link>
+        <div>
+          <p className="mb-2 text-sm font-medium">Occasion</p>
+          <div className="flex flex-wrap gap-2">
+            <Link href={href(searchParams, { occasion: undefined })} className={chip(!searchParams.occasion)}>Any</Link>
+            {occasions.map((o) => (
+              <Link key={o.slug} href={href(searchParams, { occasion: o.slug })} className={chip(searchParams.occasion === o.slug)}>
+                {o.name}
+              </Link>
+            ))}
+          </div>
+        </div>
+        <div>
+          <p className="mb-2 text-sm font-medium">Sort by</p>
+          <div className="flex flex-wrap gap-2">
+            {sorts.map((s) => (
+              <Link key={s.value} href={href(searchParams, { sort: s.value })} className={chip((searchParams.sort ?? "new") === s.value)}>
+                {s.label}
+              </Link>
+            ))}
+          </div>
+        </div>
       </div>
 
-      <div className="mb-8 grid gap-4 rounded-card bg-cream-50 p-4 shadow-soft sm:grid-cols-2 lg:grid-cols-4">
-        {[
-          "All candles",
-          "Best sellers",
-          "Fresh",
-          "Warm & cozy",
-          "Romantic",
-        ].map((filter) => (
-          <button
-            key={filter}
-            className="rounded-md border border-cocoa-900/10 px-3 py-2 text-sm transition hover:border-wine-600 hover:text-wine-600"
-          >
-            {filter}
-          </button>
-        ))}
-      </div>
+      <p className="mt-8 text-sm text-cocoa-600" aria-live="polite">
+        {products.length} {products.length === 1 ? "candle" : "candles"}
+      </p>
 
-      <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
-        {products.map((product) => (
-          <Link
-            key={product.slug}
-            href={`/shop/${product.slug}`}
-            className="group rounded-card bg-cream-50 p-3 shadow-soft transition hover:-translate-y-1"
-          >
-            <div className="mb-4 aspect-square rounded-xl bg-gradient-to-br from-blush-200 to-cream-100" />
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <h2 className="text-xl">{product.name}</h2>
-                <p className="mt-1 text-sm text-cocoa-600">Signature candle</p>
-              </div>
-              <span className="text-sm font-medium text-wine-600">{product.price}</span>
-            </div>
-          </Link>
-        ))}
-      </div>
+      {products.length ? (
+        <div className="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
+          {products.map((p) => <ProductCard key={p.id} p={p} />)}
+        </div>
+      ) : (
+        <div className="mt-6 rounded-card bg-cream-50 p-8 text-center shadow-soft">
+          <p className="font-display text-2xl">Nothing matches those filters.</p>
+          <Link href="/shop" className="btn-primary mt-4">Clear filters</Link>
+        </div>
+      )}
     </main>
   );
 }
