@@ -4,10 +4,16 @@ const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 if (!url || !key) {
+  const seen = Object.keys(process.env).filter((k) => k.startsWith("NEXT_PUBLIC_"));
   throw new Error(
-    "Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY. Add them in Vercel → Settings → Environment Variables, then redeploy."
+    [
+      "Supabase env vars missing at build time.",
+      `URL: ${url ? "found" : "MISSING"}`,
+      `ANON_KEY: ${key ? "found" : "MISSING"}`,
+      `Vercel environment of this build: ${process.env.VERCEL_ENV ?? "unknown"}`,
+      `NEXT_PUBLIC_* names this build can see: ${seen.length ? seen.join(", ") : "(none)"}`,
+    ].join(" | ")
   );
 }
 
-// Public, read-only client (anon key + RLS). Safe in server components.
 export const supabase = createClient(url, key);
