@@ -9,6 +9,7 @@ import { BottomNav } from "@/components/BottomNav";
 const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
+  style: ["normal", "italic"],
   variable: "--font-cormorant",
 });
 const dmSans = DM_Sans({ subsets: ["latin"], variable: "--font-dm-sans" });

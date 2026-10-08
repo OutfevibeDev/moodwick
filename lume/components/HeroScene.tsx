@@ -59,12 +59,6 @@ export function HeroScene() {
     return () => ro.disconnect();
   }, []);
 
-  // The candle catches a moment after load.
-  useEffect(() => {
-    const t = setTimeout(() => setState("lit"), 450);
-    return () => clearTimeout(t);
-  }, []);
-
   const lit = state === "lit";
   const wickX = rect ? rect.left + rect.w * FLAME_X : 0;
   const wickY = rect ? rect.top + rect.h * WICK_Y : 0;
@@ -86,6 +80,17 @@ export function HeroScene() {
             className="object-cover opacity-90"
             style={{ objectPosition: `${POS_X * 100}% ${POS_Y * 100}%` }}
           />
+          {/* Same photo with the flame removed. Visible before ignition and after blow-out. */}
+          <Image
+            src="/hero-out.png"
+            alt=""
+            fill
+            sizes="100vw"
+            loading="eager"
+            aria-hidden
+            className="object-cover transition-opacity duration-700"
+            style={{ objectPosition: `${POS_X * 100}% ${POS_Y * 100}%`, opacity: lit ? 0 : 0.9 }}
+          />
 
           {rect && (
             <div
@@ -97,7 +102,7 @@ export function HeroScene() {
               aria-hidden
             >
               <div
-                className="transition-opacity duration-500"
+                className="absolute inset-0 transition-opacity duration-500"
                 style={{ opacity: lit ? 1 : 0 }}
               >
                 <div className="hero-glow-wide" style={{ left: `${FLAME_X * 100}%`, top: `${FLAME_MID_Y * 100}%` }} />
@@ -165,7 +170,7 @@ export function HeroScene() {
 
       <button
         type="button"
-        onClick={() => setState(lit ? "out" : "lit")}
+        onClick={() => setState((current) => current === "lit" ? "out" : "lit")}
         className="absolute bottom-20 right-4 z-10 inline-flex items-center gap-2 rounded-full border border-white/25 bg-cocoa-900/55 px-4 py-2 text-sm text-cream-50 backdrop-blur transition hover:bg-cocoa-900/75 md:bottom-24 md:right-8"
       >
         <Flame size={16} className={lit ? "text-gold-400" : "opacity-60"} aria-hidden />
